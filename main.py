@@ -39,23 +39,32 @@
 #             loop.close()
 #         except Exception:
 #             pass
+
+
+
+
 import os
 import asyncio
 import importlib
 import sys
 import time
 from flask import Flask, redirect
+from telethon import TelegramClient
 from telethon.errors import FloodWaitError
 
 # Flask App Setup
 flask_app = Flask(__name__)
-app = flask_app  # Explicit declaration for Gunicorn
+app = flask_app  # For Gunicorn
+
+# Initialize Telegram Client (MOVE THIS TO shared_client.py if needed)
+api_id = int(os.getenv('API_ID'))
+api_hash = os.getenv('API_HASH')
+client = TelegramClient('bot_session', api_id, api_hash)
 
 @flask_app.route("/")
 def welcome():
     return redirect("https://t.me/Shivaay20005", code=302)
 
-# Telegram Client Setup
 async def start_client():
     try:
         await client.start()

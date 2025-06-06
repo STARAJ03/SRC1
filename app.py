@@ -9,20 +9,18 @@ from utils.func import get_user_data, save_user_data, is_premium_user
 from utils.encrypt import encrypt_data, decrypt_data
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return jsonify({
-        "status": "online",
-        "message": "Bot API is running"
-    })
+    return "Bot is running!"
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy"}), 200
 
 @app.route('/api/user/<int:user_id>', methods=['GET'])
 async def get_user(user_id):

@@ -33,7 +33,8 @@ bot = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=4  # Add workers parameter
+    workers=4,
+    no_updates=False
 )
 
 # Initialize user client
@@ -42,7 +43,8 @@ user = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     session_string=STRING,
-    workers=4  # Add workers parameter
+    workers=4,
+    no_updates=False
 )
 
 # Start command
@@ -131,7 +133,10 @@ async def main():
                 logger.error(f"Error sending startup message: {e}")
         
         # Keep the bot running
-        await bot.idle()
+        await asyncio.gather(
+            bot.idle(),
+            user.idle()
+        )
         
     except Exception as e:
         logger.error(f"❌ Error starting bot: {e}")

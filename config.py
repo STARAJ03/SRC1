@@ -23,7 +23,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 MONGO_DB = os.getenv("MONGO_DB", "")
 OWNER_ID = list(map(int, os.getenv("OWNER_ID", "").split())) # list seperated via space
 DB_NAME = os.getenv("DB_NAME", "telegram_downloader")
-STRING = os.getenv("STRING", None) # optional
+STRING = os.getenv("STRING", "1BVtsOKEBu6tpuKQA25BrfQ9ZMOqUMkwHawHfokYxhnj_ru3BTLIsJrmH2gYYjtuNsvKnYoZBbp0HqkVpqJkIwzxmxG8SX5OldMajhRFtCIjcpYfwOpMpm5U0chIF7CgdbeiSmY63ekdHyChujzA5ASdV-PdzeFUZxNeUl4GBhMl74dP0R-bnTeb03jlxddzu9ZwaXglqnyIJ1obhn7wYggiUCcKiAOwnfbEkwmheDiBuXoZRPNF7xH4kRIQh6n2KT5PVmVhv76eqFIlwenVLirg6g0p-QKQOuhYpguMl1TSfZVand-Mnl99sLbDDlTpj6zeti2YdOywVzNpNhNCfCvnlJIYWLSw=") # optional
 LOG_GROUP = int(os.getenv("LOG_GROUP", "-1001234456")) # optional with -100
 FORCE_SUB = int(os.getenv("FORCE_SUB", "-10012345567")) # optional with -100
 MASTER_KEY = os.getenv("MASTER_KEY", "gK8HzLfT9QpViJcYeB5wRa3DmN7P2xUq") # for session encryption

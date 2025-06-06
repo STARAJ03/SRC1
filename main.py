@@ -51,7 +51,7 @@ import time
 from flask import Flask, redirect
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError
-from telethon.sessions import StringSession  # Changed from SQLite to StringSession
+from telethon.sessions import StringSession  # Use built-in StringSession
 
 # Flask App Setup
 flask_app = Flask(__name__)
@@ -60,8 +60,8 @@ app = flask_app  # For Gunicorn
 # Initialize Telegram Client
 api_id = int(os.getenv('API_ID'))
 api_hash = os.getenv('API_HASH')
-bot_token = os.getenv('BOT_TOKEN')  # Added bot token from env vars
-client = TelegramClient(StringSession(), api_id, api_hash)  # Using StringSession
+bot_token = os.getenv('BOT_TOKEN')
+client = TelegramClient(StringSession(), api_id, api_hash)
 
 @flask_app.route("/")
 def welcome():
@@ -69,8 +69,10 @@ def welcome():
 
 async def start_client():
     try:
-        await client.start(bot_token=bot_token)  # Non-interactive startup
+        await client.start(bot_token=bot_token)
         print("Bot started successfully")
+        # Print the session string for backup
+        print("Session string:", client.session.save())
     except FloodWaitError as e:
         print(f'Waiting {e.seconds} seconds due to flood wait')
         time.sleep(e.seconds)

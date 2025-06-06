@@ -34,10 +34,12 @@ from concurrent.futures import ThreadPoolExecutor
 import aiohttp 
 import logging
 import aiofiles
-from config import YT_COOKIES, INSTA_COOKIES
+from config import YT_COOKIES, INSTA_COOKIES, FREEMIUM_LIMIT, PREMIUM_LIMIT
 from mutagen.id3 import ID3, TIT2, TPE1, COMM, APIC
 from mutagen.mp3 import MP3
- 
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+
 logger = logging.getLogger(__name__)
  
  
@@ -567,3 +569,138 @@ def convert(seconds: int) -> str:
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}:{minutes:02d}:{seconds:02d}"
+
+# YT-DLP options
+ydl_opts = {
+    'format': 'best',
+    'quiet': True,
+    'no_warnings': True,
+    'extract_flat': True,
+    'cookiesfrombrowser': ('chrome',),
+    'cookiefile': 'cookies.txt'
+}
+
+def get_video_info(url):
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
+    except Exception as e:
+        logger.error(f"Error getting video info: {e}")
+        return None
+
+def format_duration(seconds):
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours}:{minutes:02d}:{seconds:02d}"
+
+@app.on_message(filters.command("ytdl"))
+async def ytdl_command(client: Client, message: Message):
+    try:
+        user_id = message.from_user.id
+        
+        # Check if user is premium
+        is_premium = await is_premium_user(user_id)
+        user_limit = PREMIUM_LIMIT if is_premium else FREEMIUM_LIMIT
+        
+        # Extract URL from message
+        url = message.text.split(" ", 1)[1] if len(message.text.split()) > 1 else None
+        if not url:
+            await message.reply_text("❌ Please provide a valid YouTube URL")
+            return
+            
+        # Validate URL
+        if not re.match(r'^https?://(?:www\.)?(?:youtube\.com|youtu\.be)/', url):
+            await message.reply_text("❌ Invalid YouTube URL")
+            return
+            
+        # Get video info
+        status_msg = await message.reply_text("🔄 Fetching video information...")
+        video_info = get_video_info(url)
+        
+        if not video_info:
+            await status_msg.edit_text("❌ Failed to fetch video information")
+            return
+            
+        # Prepare video details
+        title = video_info.get('title', 'Unknown Title')
+        duration = format_duration(video_info.get('duration', 0))
+        views = video_info.get('view_count', 0)
+        uploader = video_info.get('uploader', 'Unknown')
+        
+        # Create download options
+        formats = []
+        for f in video_info.get('formats', []):
+            if f.get('ext') in ['mp4', 'webm']:
+                formats.append(f)
+                
+        if not formats:
+            await status_msg.edit_text("❌ No suitable formats found")
+            return
+            
+        # Sort formats by quality
+        formats.sort(key=lambda x: x.get('height', 0), reverse=True)
+        
+        # Create buttons for format selection
+        buttons = []
+        for f in formats[:3]:  # Show top 3 formats
+            quality = f"{f.get('height', '?')}p"
+            size = f.get('filesize', 0)
+            if size:
+                size = f"{size/1024/1024:.1f}MB"
+            else:
+                size = "Unknown"
+                
+            buttons.append([
+                InlineKeyboardButton(
+                    f"{quality} - {size}",
+                    callback_data=f"ytdl_{f['format_id']}_{url}"
+                )
+            ])
+            
+        await status_msg.edit_text(
+            f"📹 **Video Information**\n\n"
+            f"📌 Title: {title}\n"
+            f"⏱ Duration: {duration}\n"
+            f"👁 Views: {views:,}\n"
+            f"👤 Uploader: {uploader}\n\n"
+            f"Select quality to download:",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in ytdl command: {e}")
+        await message.reply_text(f"❌ An error occurred: {str(e)}")
+
+@app.on_callback_query(filters.regex(r"^ytdl_"))
+async def ytdl_callback(client: Client, callback_query):
+    try:
+        # Extract data from callback
+        data = callback_query.data.split("_")
+        format_id = data[1]
+        url = data[2]
+        
+        # Update status
+        await callback_query.message.edit_text("🔄 Downloading video...")
+        
+        # Download video
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            ydl_opts.update({
+                'format': format_id,
+                'outtmpl': temp_file.name
+            })
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+                
+            # Upload to Telegram
+            await callback_query.message.reply_video(
+                video=temp_file.name,
+                caption="✅ Download completed!"
+            )
+            
+        # Cleanup
+        os.unlink(temp_file.name)
+        
+    except Exception as e:
+        logger.error(f"Error in ytdl callback: {e}")
+        await callback_query.message.edit_text(f"❌ Download failed: {str(e)}")

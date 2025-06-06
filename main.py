@@ -32,7 +32,8 @@ bot = Client(
     "bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    bot_token=BOT_TOKEN,
+    workers=4  # Add workers parameter
 )
 
 # Initialize user client
@@ -40,7 +41,8 @@ user = Client(
     "user",
     api_id=API_ID,
     api_hash=API_HASH,
-    session_string=STRING
+    session_string=STRING,
+    workers=4  # Add workers parameter
 )
 
 # Start command
@@ -141,6 +143,11 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        # Set event loop policy
+        if sys.platform.startswith('win'):
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        
+        # Run the main function
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("🛑 Bot shutdown complete.")

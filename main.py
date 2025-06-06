@@ -41,7 +41,16 @@
 #             pass
 
 
+import time
+from telethon.errors import FloodWaitError
 
+async def start_client():
+    try:
+        await client.start()
+    except FloodWaitError as e:
+        print(f'Waiting {e.seconds} seconds due to flood wait')
+        time.sleep(e.seconds)
+        await start_client()
 
 
 

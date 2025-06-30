@@ -30,7 +30,7 @@ FORCE_SUB = int(os.getenv("FORCE_SUB", 0))
 
 # Limits Configuration
 FREEMIUM_LIMIT = int(os.getenv("FREEMIUM_LIMIT", 0))
-PREMIUM_LIMIT = int(os.getenv("PREMIUM_LIMIT", 500))
+PREMIUM_LIMIT = int(os.getenv("PREMIUM_LIMIT", 10000))
 
 # Database Configuration
 MONGO_DB = os.getenv("MONGO_DB")
